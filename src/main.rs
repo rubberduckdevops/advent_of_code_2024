@@ -19,7 +19,10 @@ fn main() {
         if determine_safe(data) {
             println!("Report Safe");
             total_safe_reports += 1;
+        } else {
+            println!("Send for re-evaluation");
         }
+
     }
     println!("Total Safe: {}", total_safe_reports);
 }
@@ -32,7 +35,6 @@ fn determine_safe(report: Vec<i32>) -> bool{
     let condition_1: bool = determine_direction_safe(&report);
     let condition_2: bool = determine_level_differ_safe(&report);
 
-
     if condition_1 & condition_2 {
         println!("Safe!");
         true
@@ -40,7 +42,35 @@ fn determine_safe(report: Vec<i32>) -> bool{
         println!("UNSAFE");
         false
     }
+}
 
+fn determine_safe_dampener(report: Vec<i32>){
+    let mut report_safety = false;
+    let mut failure_count = 0;
+    for i in 1..report.len() {
+        if level_differ((report[i], report[i-1])) {
+            continue;
+        } else {
+            println!("maybe we should try again");
+            failure_count += 1;
+        }
+    }
+
+}
+
+// fn direction_saftey(pair: (i32, i32)){
+//     if
+// }
+
+fn level_differ(pair: (i32,i32)) -> bool{
+    let diff:i32 = pair[0] - pair[1];
+    if diff.abs() > 3 {
+        return false
+    } else if diff.abs() == 0 {
+        return false
+    } else {
+        return true
+    }
 }
 
 fn determine_level_differ_safe(report: &Vec<i32>) -> bool {
