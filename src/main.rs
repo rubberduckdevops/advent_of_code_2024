@@ -16,31 +16,107 @@ fn main() {
     println!("{:?}", report_data);
     let mut total_safe_reports: i32 = 0;
     for data in report_data {
-        if determine_safe(data) {
-            println!("Report Safe");
-            total_safe_reports += 1;
-        } else {
-            println!("Send for re-evaluation");
+        let mut report_outcome = determine_safe(data);
+        while !report_outcome.condition_2 || !report_outcome.condition_1 {
+            println!("{}", report_outcome.report_data.len());
+            if report_outcome.report_data.len() < 6 {
+                println!("Index less than 6 break loop");
+                break;
+            }
+            report_outcome = determine_safe(report_outcome.report_data)
+        }
+        if report_outcome.condition_2 && report_outcome.condition_1 {
+            println!("Report completed!");
+            total_safe_reports += 1
         }
 
     }
     println!("Total Safe: {}", total_safe_reports);
 }
 
-fn determine_safe(report: Vec<i32>) -> bool{
+struct ReactorReport {
+    report_data: Vec<i32>,
+    condition_1: bool,
+    condition_2: bool,
+    direction: Direction,
+}
+
+#[derive(PartialEq)]
+enum Direction {
+    Increasing,
+    Decreasing,
+    Unknown,
+}
+
+impl ReactorReport {
+    fn new(data: Vec<i32>, cond1: bool, cond2: bool, dir: Direction) -> Self {
+        ReactorReport {
+            report_data: data,
+            condition_1: cond1,
+            condition_2: cond2,
+            direction: dir,
+        }
+    }
+}
+
+
+fn determine_safe(new_data: Vec<i32>) -> ReactorReport{
     /**
         The levels are either all increasing or all decreasing.
         Any two adjacent levels differ by at least one and at most three.
     **/
-    let condition_1: bool = determine_direction_safe(&report);
-    let condition_2: bool = determine_level_differ_safe(&report);
 
-    if condition_1 & condition_2 {
-        println!("Safe!");
-        true
+    let mut report = ReactorReport::new(
+        new_data.clone(),
+        true,
+        true,
+        Direction::Unknown,
+    );
+    println!("Starting evaluation");
+    for i in 1..report.report_data.len() {
+        let data_tuple: (i32, i32) = (report.report_data[i-1], report.report_data[i]);
+        // Test Condition 1
+        let pair_direction = determine_direction(data_tuple);
+        println!("{:#?}", data_tuple);
+        if report.direction == Direction::Unknown {
+            report.direction = pair_direction;
+        } else {
+            if pair_direction != report.direction {
+                println!("Direction does not match...");
+                report.condition_1 = false;
+                println!("{}", report.condition_1);
+                // Handle failure here
+            } else {
+                report.condition_1 = true;
+            }
+
+        }
+
+        // Test Condition 2
+        if level_differ(data_tuple) {
+            report.condition_2 = true;
+        } else {
+            report.condition_2 = false;
+        }
+
+        // Check Both Conditions are True
+        if report.condition_1 && report.condition_2 {
+            println!("Happy days conditions match for tuple");
+            continue;
+        } else {
+            report.report_data.remove(i);
+            println!("{:?}", report.report_data);
+            return report;
+        }
+    }
+    report
+}
+
+fn determine_direction(pair:(i32,i32)) -> Direction{
+    if pair.0 < pair.1 {
+        Direction::Decreasing
     } else {
-        println!("UNSAFE");
-        false
+        Direction::Increasing
     }
 }
 
@@ -58,12 +134,9 @@ fn determine_safe_dampener(report: Vec<i32>){
 
 }
 
-// fn direction_saftey(pair: (i32, i32)){
-//     if
-// }
 
 fn level_differ(pair: (i32,i32)) -> bool{
-    let diff:i32 = pair[0] - pair[1];
+    let diff:i32 = pair.0 - pair.1;
     if diff.abs() > 3 {
         return false
     } else if diff.abs() == 0 {
